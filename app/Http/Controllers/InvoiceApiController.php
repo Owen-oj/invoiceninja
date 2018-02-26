@@ -68,6 +68,11 @@ class InvoiceApiController extends BaseAPIController
             $invoices->whereInvoiceNumber($invoiceNumber);
         }
 
+        // Fllter by status
+        if ($statusId = Input::get('status_id')) {
+            $invoices->where('invoice_status_id', '>=', $statusId);
+        }
+
         return $this->listResponse($invoices);
     }
 
@@ -206,9 +211,7 @@ class InvoiceApiController extends BaseAPIController
                     $invoice = $recurringInvoice;
                 }
                 $reminder = isset($data['email_type']) ? $data['email_type'] : false;
-                if (auth()->user()->isTrusted()) {
-                    $this->dispatch(new SendInvoiceEmail($invoice, auth()->user()->id, $reminder));
-                }
+                $this->dispatch(new SendInvoiceEmail($invoice, auth()->user()->id, $reminder));
             }
         }
 
@@ -339,10 +342,6 @@ class InvoiceApiController extends BaseAPIController
 
     public function emailInvoice(InvoiceRequest $request)
     {
-        if (! auth()->user()->isTrusted()) {
-            return $this->errorResponse('Requires paid pro plan', 400);
-        }
-
         $invoice = $request->entity();
 
         if ($invoice->is_recurring && $recurringInvoice = $this->invoiceRepo->createRecurringInvoice($invoice)) {
