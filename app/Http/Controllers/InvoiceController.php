@@ -110,6 +110,12 @@ class InvoiceController extends BaseController
             $invoice->invoice_status_id = 0;
             $invoice->invoice_date = date_create()->format('Y-m-d');
             $invoice->deleted_at = null;
+            while ($invoice->documents->count()) {
+                $invoice->documents->pop();
+            }
+            while ($invoice->expenses->count()) {
+                $invoice->expenses->pop();
+            }
             $method = 'POST';
             $url = "{$entityType}s";
         } else {
@@ -321,7 +327,7 @@ class InvoiceController extends BaseController
             'invoiceLabels' => Auth::user()->account->getInvoiceLabels(),
             'tasks' => Session::get('tasks') ? Session::get('tasks') : null,
             'expenseCurrencyId' => Session::get('expenseCurrencyId') ?: null,
-            'expenses' => Session::get('expenses') ? Expense::scope(Session::get('expenses'))->with('documents', 'expense_category')->get() : [],
+            'expenses' => Expense::scope(Session::get('expenses'))->with('documents', 'expense_category')->get(),
         ];
     }
 

@@ -70,6 +70,7 @@ class User extends Authenticatable
         'google_2fa_secret',
         'google_2fa_phone',
         'remember_2fa_token',
+        'slack_webhook_url',
     ];
 
     /**
@@ -133,6 +134,14 @@ class User extends Authenticatable
     public function isPro()
     {
         return $this->account->isPro();
+    }
+
+    /**
+     * @return mixed
+     */
+    public function isEnterprise()
+    {
+        return $this->account->isEnterprise();
     }
 
     /**
@@ -445,6 +454,29 @@ class User extends Authenticatable
     {
         //$this->notify(new ResetPasswordNotification($token));
         app('App\Ninja\Mailers\UserMailer')->sendPasswordReset($this, $token);
+    }
+
+    public function routeNotificationForSlack()
+    {
+        return $this->slack_webhook_url;
+    }
+
+    public function hasAcceptedLatestTerms()
+    {
+        if (! NINJA_TERMS_VERSION) {
+            return true;
+        }
+
+        return $this->accepted_terms_version == NINJA_TERMS_VERSION;
+    }
+
+    public function acceptLatestTerms($ip)
+    {
+        $this->accepted_terms_version = NINJA_TERMS_VERSION;
+        $this->accepted_terms_timestamp = date('Y-m-d H:i:s');
+        $this->accepted_terms_ip = $ip;
+
+        return $this;
     }
 }
 

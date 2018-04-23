@@ -14,6 +14,7 @@
             ->method($method)
             ->onsubmit('return onFormSubmit(event)')
             ->id('mainForm')
+            ->autocomplete('off')
             ->addClass('warn-on-exit')
             ->rules([
                 'invoice_id' => 'required',
@@ -170,7 +171,16 @@
                     field = 'client.phone';
                 }
 
-                var value = getDescendantProp(invoice, field) || ' ';
+                if (field == 'logo_url') {
+                    var value = "{{ $account->getLogoURL() }}";
+                } else if (field == 'quote_image_url') {
+                    var value = "{{ asset('/images/quote.png') }}";
+                } else if (match == '$client.name') {
+                    var value = getClientDisplayName(invoice.client);
+                } else {
+                    var value = getDescendantProp(invoice, field) || ' ';
+                }
+
                 value = doubleDollarSign(value) + '';
                 value = value.replace(/\n/g, "\\n").replace(/\r/g, "\\r");
 
@@ -192,11 +202,9 @@
             submitForm_proposal('archive', {{ $proposal->id }});
     	}
 
-    	function onDeleteClick() {
-            sweetConfirm(function() {
-                submitForm_proposal('delete', {{ $proposal->id }});
-            });
-    	}
+        function onDeleteClick() {
+            submitForm_proposal('delete', {{ $proposal->id }});
+        }
     @endif
 
     $(function() {

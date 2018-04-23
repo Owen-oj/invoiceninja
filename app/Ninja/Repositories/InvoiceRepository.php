@@ -240,7 +240,9 @@ class InvoiceRepository extends BaseRepository
 
         $table = \Datatable::query($query)
             ->addColumn('frequency', function ($model) {
-                return trans('texts.freq_' . \Str::snake($model->frequency));
+                $frequency = strtolower($model->frequency);
+                $frequency = preg_replace('/\s/', '_', $frequency);
+                return trans('texts.freq_' . $frequency);
             })
             ->addColumn('start_date', function ($model) {
                 return Utils::fromSqlDate($model->start_date);
@@ -549,7 +551,7 @@ class InvoiceRepository extends BaseRepository
                 if ($invoice->is_amount_discount) {
                     $lineTotal -= $discount;
                 } else {
-                    $lineTotal -= $lineTotal * $discount / 100;
+                    $lineTotal -= round($lineTotal * $discount / 100, 4);
                 }
             }
 
@@ -567,17 +569,17 @@ class InvoiceRepository extends BaseRepository
                 if ($invoice->is_amount_discount) {
                     $lineTotal -= $discount;
                 } else {
-                    $lineTotal -= round($lineTotal * $discount / 100, 2);
+                    $lineTotal -= round($lineTotal * $discount / 100, 4);
                 }
             }
 
             if ($invoice->discount > 0) {
                 if ($invoice->is_amount_discount) {
                     if ($total != 0) {
-                        $lineTotal -= round(($lineTotal / $total) * $invoice->discount, 2);
+                        $lineTotal -= round(($lineTotal / $total) * $invoice->discount, 4);
                     }
                 } else {
-                    $lineTotal -= round($lineTotal * ($invoice->discount / 100), 2);
+                    $lineTotal -= round($lineTotal * ($invoice->discount / 100), 4);
                 }
             }
 
@@ -958,6 +960,7 @@ class InvoiceRepository extends BaseRepository
                 'tax_rate2',
                 'custom_value1',
                 'custom_value2',
+                'discount',
             ] as $field) {
                 $cloneItem->$field = $item->$field;
             }
@@ -1140,6 +1143,7 @@ class InvoiceRepository extends BaseRepository
             $item->tax_rate2 = $recurItem->tax_rate2;
             $item->custom_value1 = Utils::processVariables($recurItem->custom_value1, $client);
             $item->custom_value2 = Utils::processVariables($recurItem->custom_value2, $client);
+            $item->discount = $recurItem->discount;
             $invoice->invoice_items()->save($item);
         }
 
@@ -1192,7 +1196,7 @@ class InvoiceRepository extends BaseRepository
         }
 
         if (! count($dates)) {
-            return [];
+            return collect();
         }
 
         $sql = implode(' OR ', $dates);

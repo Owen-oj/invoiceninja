@@ -27,6 +27,10 @@ class ExpenseReport extends AbstractReport
             $columns['tax'] = ['columnSelector-false'];
         }
 
+        if ($this->isExport) {
+            $columns['currency'] = ['columnSelector-false'];
+        }
+
         return $columns;
     }
 
@@ -34,6 +38,7 @@ class ExpenseReport extends AbstractReport
     {
         $account = Auth::user()->account;
         $exportFormat = $this->options['export_format'];
+        $subgroup = $this->options['subgroup'];
         $with = ['client.contacts', 'vendor'];
         $hasTaxRates = TaxRate::scope()->count();
 
@@ -74,7 +79,7 @@ class ExpenseReport extends AbstractReport
                 $expense->client ? ($this->isExport ? $expense->client->getDisplayName() : $expense->client->present()->link) : '',
                 $this->isExport ? $expense->present()->expense_date : link_to($expense->present()->url, $expense->present()->expense_date),
                 $expense->present()->category,
-                Utils::formatMoney($amount, $expense->currency_id),
+                Utils::formatMoney($amount, $expense->expense_currency_id),
                 $expense->public_notes,
                 $expense->private_notes,
                 $expense->user->getDisplayName(),
@@ -84,10 +89,24 @@ class ExpenseReport extends AbstractReport
                 $row[] = $expense->present()->taxAmount;
             }
 
+            if ($this->isExport) {
+                $row[] = $expense->present()->currencyCode;
+            }
+
             $this->data[] = $row;
 
             $this->addToTotals($expense->expense_currency_id, 'amount', $amount);
             $this->addToTotals($expense->invoice_currency_id, 'amount', 0);
+
+            if ($subgroup == 'category') {
+                $dimension = $expense->present()->category;
+            } elseif ($subgroup == 'vendor') {
+                $dimension = $expense->vendor ? $expense->vendor->name : trans('texts.unset');
+            } else {
+                $dimension = $this->getDimension($expense);
+            }
+
+            $this->addChartData($dimension, $expense->expense_date, $amount);
         }
     }
 }

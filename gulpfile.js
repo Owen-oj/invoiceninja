@@ -100,7 +100,8 @@ elixir(function(mix) {
     mix.scripts([
         'pdf_viewer.js',
         'compatibility.js',
-        bowerDir + '/pdfmake/build/pdfmake.js',
+        //bowerDir + '/pdfmake/build/pdfmake.js',
+        'pdfmake.js',
         'vfs.js'
     ], 'public/pdf.built.js');
 
@@ -110,8 +111,6 @@ elixir(function(mix) {
 
     mix.scripts([
         bowerDir + '/grapesjs/dist/grapes.js',
-        'grapesjs-blocks-basic.min.js',
-        'grapesjs-preset-newsletter.min.js',
     ], 'public/js/grapesjs.min.js');
 
     mix.scripts([
